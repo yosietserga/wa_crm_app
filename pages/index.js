@@ -1,5 +1,4 @@
 import Layout from "../components/Layout";
-import Whatsapp_Chats from "../components/whatsapp/chats";
 import { useRouter } from "next/router";
 
 export default function Index() {
@@ -9,7 +8,7 @@ export default function Index() {
   return (
     <div>
       <Layout>
-        <Whatsapp_Chats />
+        Bienvenido
       </Layout>
     </div>
   );

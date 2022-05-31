@@ -1,0 +1,68 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["extendedIndexes", "fullTextSearch", "filterJson"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./bot.db"
+}
+
+model Order {
+  id             Int      @id @default(autoincrement())
+  uuid           String   @unique @default(cuid())
+  title          String
+  description    String?
+  currencyRate   Float?
+  currencySymbol String?
+  price          Float?
+  createdAt      DateTime @default(now())
+}
+
+model Step {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(cuid())
+  chatId      String   @unique
+  body        String
+  createdAt   DateTime  @default(now())
+  chat        Chat     @relation(fields: [chatId], references: [chatId], onDelete: NoAction)
+}
+
+model Chat {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(cuid())
+  chatId      String   @unique
+  type        String  
+  body        String
+  createdAt   DateTime  @default(now())
+  steps       Step[]
+  messages    Message[]
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  uuid        String   @unique @default(cuid())
+  messageId   String   @unique
+  chatId      String
+  type        String   
+  body        String
+  replied     Int @default(0)
+  createdAt   DateTime @default(now())
+  chat        Chat     @relation(fields: [chatId], references: [chatId], onDelete: NoAction)
+}
+
+model Customer {
+  id              Int           @id @default(autoincrement())
+  uuid            String        @unique @default(cuid())
+  firstname       String?
+  lastname        String?
+  company         String?
+  email           String        @unique
+  phone           String?
+  createdAt       DateTime      @default(now())
+  
+  @@index([firstname, lastname])
+  @@index([company])
+  @@index([email])
+  @@index([phone])
+}

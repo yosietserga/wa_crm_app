@@ -1,8 +1,8 @@
 // Next.js API route support: https://nextjs.org/docs/api-routes/introduction
 import P from "pino";
 import storage from "node-persist";
-import { uuid, isUuid } from "uuidv4";
-
+import { v4 as uuid } from "uuid";
+import { validate as isUuid } from "uuid";
 
 const __data = {};
 storage.init({
@@ -14,47 +14,49 @@ const __get = async (object, id) => {
   if (typeof id != "undefined" && isUuid(id)) {
     const __id = object + ":" + id;
     const data = await storage.getItem(__id);
-    return data ?? null;
+    return data ?? [];
   } else {
-    const data = await storage?.valuesWithKeyMatch(`${object}`);
-    return data ?? null;
+    const data =
+      typeof storage?.valuesWithKeyMatch == "function"
+        ? await storage?.valuesWithKeyMatch(`${object}`)
+        : [];
+    return data ?? [];
   }
-}
+};
 
 const __set = async (object, id, data) => {
-    if (!object || !data) return false;
+  if (!object || !data) return false;
 
-    if (id) {
-      const __id = object + ":" + id;
-      const d = await __get(object, id);
-      if (d.length) {
-        return await storage.updateItem(__id, { ...d[0], ...data });
-      } else {
-        data["id"] = uuid();
-        data["object"] = object;
-        return await storage.setItem(data["object"] + ":" + data["id"], data);
-      }
+  if (id) {
+    const __id = object + ":" + id;
+    const d = await __get(object, id);
+    if (d.length) {
+      return await storage.updateItem(__id, { ...d[0], ...data });
     } else {
-        data["id"] = uuid();
-        data["object"] = object;
-        return await storage.setItem(data["object"] + ":" + data["id"], data);
+      data["id"] = uuid();
+      data["object"] = object;
+      return await storage.setItem(data["object"] + ":" + data["id"], data);
     }
-}
+  } else {
+    data["id"] = uuid();
+    data["object"] = object;
+    return await storage.setItem(data["object"] + ":" + data["id"], data);
+  }
+};
 
 const __delete = async (object, id) => {
-    const __id = object +':'+ id;
-    const d = await storage.getItem(__id);
-    if (d) {
-      return await storage.removeItem(__id);
-    }
-    return false;
-}
+  const __id = object + ":" + id;
+  const d = await storage.getItem(__id);
+  if (d) {
+    return await storage.removeItem(__id);
+  }
+  return false;
+};
 
 export default function handler(req, res) {
-    
-	const payload = req.body?.payload ?? null;
-	const id = req.query?.id ?? null;
-	const object = req.query?.object ?? null;
+  const payload = req.body?.payload ?? null;
+  const id = req.query?.id ?? null;
+  const object = req.query?.object ?? null;
   switch (req.method) {
     case "GET":
       try {
@@ -69,6 +71,7 @@ export default function handler(req, res) {
           success: false,
         });
       }
+
       break;
     case "POST":
     case "PUT":
@@ -90,17 +93,18 @@ export default function handler(req, res) {
           success: false,
         });
       }
+
       break;
     case "DELETE":
       try {
-        __delete(object, id).then(r => {
+        __delete(object, id).then((r) => {
           if (r) {
             res.status(200).json({
-              success: true
+              success: true,
             });
           } else {
             res.status(400).json({
-              success: false
+              success: false,
             });
           }
         });
@@ -109,11 +113,13 @@ export default function handler(req, res) {
           success: false,
         });
       }
+
       break;
     default:
       res.status(200).json({
         success: false,
       });
+
       break;
   }
 }

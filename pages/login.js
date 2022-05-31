@@ -113,7 +113,7 @@ const Login = () => {
                 <p className="font-bold">Error</p>
                 <p>{formik.errors.email}</p>
               </div>
-            ) : null}
+            ) : ""}
             <div className="mb-4">
               <label
                 className="block text-gray-700 text-sm font-bold mb-2"
@@ -137,7 +137,7 @@ const Login = () => {
                 <p className="font-bold">Error</p>
                 <p>{formik.errors.password}</p>
               </div>
-            ) : null}
+            ) : ""}
             <input
               type="submit"
               className="bg-gray-800 w-full mt-5 p-2 text-white uppercase hover:cursor-pointer hover:bg-gray-900"
