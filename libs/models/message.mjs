@@ -65,8 +65,8 @@ export function get(data, withInclude = false, cb = null) {
     where.type = data.type;
   }
 
-  if (isset(data?.replied) && !empty(data?.replied)) {
-    where.replied = data.replied;
+  if (isset(data?.replied)) {
+    where.replied = data?.replied === 0 ? 0 : 1;
   }
 
   if (withInclude) {

@@ -1,5 +1,4 @@
 import Bot from "./bot.mjs";
-import storage from "node-persist";
 import P from "pino";
 import WebsocketUtils from "./libs/utils/websocket.mjs";
 import WASocket from "@adiwajshing/baileys";
@@ -27,11 +26,6 @@ const makeWASocket = WASocket.default;
 const __debug = true;
 
 const __data = {};
-
-storage.init({
-  dir: "./whatsapp_bot_db",
-  logging: P().child({ level: "debug", stream: "storage" }),
-});
 
 // the store maintains the data of the WA connection in memory
 // can be written out to a file & read from it
@@ -84,11 +78,13 @@ export async function startSock (){
       await delay(2000);
 
       await sock.sendPresenceUpdate("paused", jid);
+      const r = await sock.sendMessage(jid, msg, opts);
+      if (r.status === 1) {
+        console.log("message wa sent", r);
 
-      const resp = await sock.sendMessage(jid, msg, opts);
-      console.log("message wa sent", resp);
-      if (resp) {
-        createMessage(m?.key.id, jid, getMessageType(m?.message), m, 1);//message answered or replied
+        createMessage(m?.key.id, jid, getMessageType(m?.message), m, 1, async resp => {
+          console.log("message wa db updated", resp);
+        });
       }
     } catch (err) {
       console.log(err);
@@ -123,11 +119,11 @@ export async function startSock (){
 
           //check if bot has started for this messenger
           const __d = await getStep(chatId);console.log(__d);
-          __data[chatId] = __d[0] ? JSON.parse(__d[0]?.body) : {};
+          __data[chatId] = __d[0] ? JSON.parse(JSON.parse(__d[0]?.body)) : {};
 
           if (__debug) console.log("getting steps from chat " + chatId, __data[chatId]);
+          
           if (!__data[chatId] || !__data[chatId]?.step) {
-
             //has not started
             __data[chatId] = {};
             if (__debug) {
@@ -281,7 +277,7 @@ export async function startSock (){
           setStep(chatId, __data[chatId], () => {
             createMessage(
               msg?.key.id,
-              jid,
+              msg?.key.remoteJid,
               getMessageType(msg?.message),
               msg,
               1

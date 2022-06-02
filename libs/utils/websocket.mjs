@@ -114,7 +114,7 @@ const createChat = (chatId, type, body, cb) => {
   }
 };
 
-const createMessage = (messageId, chatId, type, body, replied) => {
+const createMessage = (messageId, chatId, type, body, replied, cb) => {
   try {
     const formData = {
       messageId,
@@ -126,7 +126,7 @@ const createMessage = (messageId, chatId, type, body, replied) => {
 
     createChat(chatId, "direct", {id:chatId}, (resp)=>{
       console.log("response create chat", resp);
-      Message.upsert(formData);
+      Message.upsert(formData, cb);
     });
     
   } catch (error) {
@@ -172,6 +172,7 @@ const getMessageType = (messageObj) => {
 };
 
 const getTextMessage = (messageObj) => {
+  if (!messageObj || typeof messageObj === "undefined") return false;
   const type = getMessageType(messageObj);
   if (__debug) console.log({ messageType: type }, messageObj);
   if (type == "text") return messageObj.conversation;

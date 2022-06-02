@@ -32,6 +32,8 @@ const controls = {
     return steps[pointer["current"]];
   },
   match: (str) => {
+    if (typeof str !== "string" || !str) return false;
+    
     console.log({str});
     let step = controls.getStep(pointer["current"]);
     console.log({ current:pointer["current"], step });
@@ -51,8 +53,8 @@ const controls = {
       if (!keywords) return i;
 
       let matches = keywords.filter((keyword) => {
-        console.log(keyword, str.toLowerCase().indexOf(keyword));
-        return str.toLowerCase().indexOf(keyword) !== -1;
+        console.log(keyword, str?.toLowerCase()?.indexOf(keyword));
+        return str?.toLowerCase()?.indexOf(keyword) !== -1;
       }).length;
     
       console.log({ matches });
