@@ -12,59 +12,55 @@ const { DisconnectReason, delay } = WASocket;
 
 const OnConnection = async (update, sock) => {
   const { connection, lastDisconnect } = update;
-  if (connection === "close") {
-    // reconnect if not logged out
-    let error = new Boom(lastDisconnect.error);
-    switch (error?.output?.statusCode) {
-      case DisconnectReason.connectionClosed:
-        sock?.close();
-        startSock(ws_client);
-        break;
-      case DisconnectReason.connectionLost:
-        sock?.close();
-        startSock(ws_client);
-        break;
-      case DisconnectReason.connectionReplaced:
-        sock?.close();
-        startSock(ws_client);
-        break;
-      case DisconnectReason.timedOut:
-        if (__debug)
-          console.log("Connection closed. Error:" + JSON.stringify(error));
-        sock?.close();
-        await delay(500);
-        startSock(ws_client);
-        return;
-        break;
-      case DisconnectReason.loggedOut:
-        if (__debug) console.log("Connection closed. You are logged out.");
-        await delay(500);
-        await sock.logout();
-        await delay(500);
-        sock?.close();
-        startSock(ws_client);
-        break;
-      case DisconnectReason.badSession:
-        if (__debug) console.log("Connection closed. Bad session.");
-        await delay(500);
-        await sock.logout();
-        await delay(500);
-        sock?.close();
-        startSock(ws_client);
-        break;
-      case DisconnectReason.restartRequired:
-        if (__debug)
-          console.log("Connection closed. Error:" + JSON.stringify(error));
-          sock?.close();
-          startSock(ws_client);
-        break;
-      case DisconnectReason.multideviceMismatch:
-        break;
-      default:
-        if (__debug)
-          console.log("Connection closed. Error:" + JSON.stringify(error));
-        break;
+  
+  const closeConn = async (sock, cb) => {
+    await sock?.end();
+    sock.ev.on("close", async () => {
+      await sock?.destroy();
+      if (typeof cb === "function") cb();
+    });
+  };
+
+  try{
+    if (connection === "close") {
+      // reconnect if not logged out
+      let error = new Boom(lastDisconnect.error);
+      
+      await closeConn(sock, startSock);
+      
+      switch (error?.output?.statusCode) {
+        case DisconnectReason.connectionClosed:
+          break;
+        case DisconnectReason.connectionLost:
+          break;
+        case DisconnectReason.connectionReplaced:
+          break;
+        case DisconnectReason.timedOut:
+          break;
+        case DisconnectReason.loggedOut:
+          if (__debug) console.log("Connection closed. You are logged out.");
+          await delay(500);
+          await sock.logout();
+          break;
+        case DisconnectReason.badSession:
+          if (__debug) console.log("Connection closed. Bad session.");
+          await delay(500);
+          await sock.logout();
+          break;
+        case DisconnectReason.restartRequired:
+          if (__debug)
+            console.log("Connection closed. Error:" + JSON.stringify(error));
+          break;
+        case DisconnectReason.multideviceMismatch:
+          break;
+        default:
+          if (__debug)
+            console.log("Connection closed. Error:" + JSON.stringify(error));
+          break;
+      }
     }
+  } catch (err) {    
+    console.log("Connection Error:" + JSON.stringify(err));
   }
 };
 
