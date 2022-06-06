@@ -3,29 +3,35 @@ import Chat from "../models/chat.mjs";
 import Message from "../models/message.mjs";
 import Order from "../models/order.mjs";
 import Step from "../models/step.mjs";
+import HapiBoom from "@hapi/boom";
 
-const __debug = true;
+const { Boom } = HapiBoom;
+const __debug = false;
 
 const { DisconnectReason, delay } = WASocket;
 
-const OnConnection = async (update) => {
+const OnConnection = async (update, sock) => {
   const { connection, lastDisconnect } = update;
   if (connection === "close") {
     // reconnect if not logged out
     let error = new Boom(lastDisconnect.error);
     switch (error?.output?.statusCode) {
       case DisconnectReason.connectionClosed:
+        sock?.close();
         startSock(ws_client);
         break;
       case DisconnectReason.connectionLost:
+        sock?.close();
         startSock(ws_client);
         break;
       case DisconnectReason.connectionReplaced:
+        sock?.close();
         startSock(ws_client);
         break;
       case DisconnectReason.timedOut:
         if (__debug)
           console.log("Connection closed. Error:" + JSON.stringify(error));
+        sock?.close();
         await delay(500);
         startSock(ws_client);
         return;
@@ -35,18 +41,22 @@ const OnConnection = async (update) => {
         await delay(500);
         await sock.logout();
         await delay(500);
+        sock?.close();
         startSock(ws_client);
         break;
       case DisconnectReason.badSession:
         if (__debug) console.log("Connection closed. Bad session.");
         await delay(500);
-        //await sock.logout();
+        await sock.logout();
         await delay(500);
+        sock?.close();
         startSock(ws_client);
         break;
       case DisconnectReason.restartRequired:
         if (__debug)
           console.log("Connection closed. Error:" + JSON.stringify(error));
+          sock?.close();
+          startSock(ws_client);
         break;
       case DisconnectReason.multideviceMismatch:
         break;
@@ -60,6 +70,7 @@ const OnConnection = async (update) => {
 
 //fetch send create order
 const createOrder = (fields, chatId) => {
+  /*
   try {
     const formData = {
       title: "Test Covid",
@@ -74,6 +85,49 @@ Price: $40 USD`,
     };
 
     Order.upsert(formData);
+  } catch (error) {
+    if (__debug) console.log("createOrder", error);
+  }
+  */
+ 
+  try {
+    fetch(
+      "http://159.223.218.29/api/crud?" +
+        new URLSearchParams({
+          object: "order",
+        }),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          payload: {
+            customer: {
+              id: "",
+              name: fields["test_fullname"]?.data,
+              email: fields["test_email"]?.data,
+              phone: chatId.replace("@s.whatsapp.net", ""),
+            },
+
+            products: [
+              {
+                id: "",
+                name: fields["custom_service"]?.data ?? "Test Covid",
+                quantity: 1,
+                price: fields["custom_service"]?.data ? 0 : 40,
+              },
+            ],
+
+            total: fields["custom_service"]?.data ? 0 : 40,
+            status: 1,
+            note: `Fecha: ${fields["test_date"]?.data}
+    Hotel: ${fields["test_hotel"]?.data}
+    Fecha: ${fields["test_habitacion"]?.data}
+    Custom Service: ${fields["custom_service"]?.data ?? ""}
+    `,
+          },
+        }),
+      }
+    );
   } catch (error) {
     if (__debug) console.log("createOrder", error);
   }

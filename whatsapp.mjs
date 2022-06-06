@@ -23,7 +23,7 @@ const {
 const makeWASocket = WASocket.default;
 
 
-const __debug = true;
+const __debug = false;
 
 const __data = {};
 
@@ -295,7 +295,9 @@ export async function startSock (){
   }, 1000 * 1);
 
 
-  sock.ev.on("connection.update", OnConnection);
+  sock.ev.on("connection.update", (data) => {
+    OnConnection(data, sock);
+  });
   sock.ev.on("creds.update", saveState);
 
   return sock;
