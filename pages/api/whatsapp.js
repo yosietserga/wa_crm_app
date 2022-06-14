@@ -77,11 +77,11 @@ const startSock = async (ws_client) => {
   sock.ev.on("qr", (m) => sendToClient("qr", m));
 
   const closeConn = async (sock) => {
-    await sock?.end();
-    sock.ev.on("close", async ()=>{
+    sock.ev.on("close", async () => {
       await sock?.destroy();
-    })
-  }
+    });
+    await sock?.end();
+  };
 
   sock.ev.on("connection.update", async (update) => {
     const { connection, lastDisconnect } = update;

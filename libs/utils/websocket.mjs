@@ -14,11 +14,11 @@ const OnConnection = async (update, sock) => {
   const { connection, lastDisconnect } = update;
   
   const closeConn = async (sock, cb) => {
-    await sock?.end();
     sock.ev.on("close", async () => {
       await sock?.destroy();
       if (typeof cb === "function") cb();
     });
+    await sock?.end();
   };
 
   try{
